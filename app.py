@@ -253,3 +253,20 @@ if not insights:
 for i, insight in enumerate(insights, 1):
     st.markdown(f"**{i}. {insight}**")
 
+# --- BLACKLIST: Top Returners by Phone Number ---
+st.subheader("⛔ Blacklist: Top 50 Return-Prone Customers")
+if all(col in df.columns for col in ['contact_phone', 'firstname', 'familyname']):
+    phone_stats = df.groupby(['contact_phone', 'firstname', 'familyname']).agg(
+        total_orders=('order_id', 'count'),
+        retour_count=('returned', 'sum')
+    ).reset_index()
+    # Only show phones with at least 1 return
+    phone_stats = phone_stats[phone_stats['retour_count'] > 0]
+    # Sort by number of returns, then by total orders
+    phone_stats = phone_stats.sort_values(['retour_count', 'total_orders'], ascending=[False, False])
+    top_blacklist = phone_stats.head(50)
+    st.dataframe(top_blacklist, use_container_width=True)
+    st.info("These persons (name, surname, phone) have the highest number of returns. Consider blocking or reviewing them.")
+else:
+    st.warning("Required columns ('contact_phone', 'firstname', 'familyname') not found in the data. Cannot compute blacklist.")
+
